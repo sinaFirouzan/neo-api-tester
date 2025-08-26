@@ -52,8 +52,6 @@ neo-api-tester/
 ---
 
 ## 📸 Screenshots
-
-*(Optional: Add screenshots of your UI here. For example:)*  
 ![App Screenshot](screenshot.png)
 
 ---
