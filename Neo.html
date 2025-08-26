@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEO API Tester</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300;400;500;700&family=Roboto:wght@100;300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles for glassmorphism and animations */
+        body {
+            background: radial-gradient(circle at 10% 20%, rgba(5, 2, 31, 0.98) 0%, rgba(0, 0, 0, 1) 90%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            font-family: 'Roboto Condensed', sans-serif;
+        }
+        
+        .glass-card {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(74, 222, 128, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+        }
+        
+        .neon-glow {
+            text-shadow: 0 0 5px rgba(74, 222, 128, 0.5), 0 0 10px rgba(74, 222, 128, 0.3);
+        }
+        
+        .neon-border {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .neon-border::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(135deg, rgba(74, 222, 128, 0.8), rgba(74, 222, 128, 0.2));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            z-index: -1;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.5);
+        }
+        
+        .btn-primary {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(74, 222, 128, 0.4);
+        }
+        
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(74, 222, 128, 0.4),
+                transparent
+            );
+            transition: 0.5s;
+        }
+        
+        .btn-primary:hover::before {
+            left: 100%;
+        }
+        
+        .loading-spinner {
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(74, 222, 128, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(74, 222, 128, 0);
+            }
+        }
+        
+        /* Animation for background grid */
+        .grid-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.05;
+            background-image: 
+                linear-gradient(rgba(74, 222, 128, 0.5) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(74, 222, 128, 0.5) 1px, transparent 1px);
+            background-size: 40px 40px;
+            animation: moveGrid 100s linear infinite;
+        }
+        
+        @keyframes moveGrid {
+            from {
+                background-position: 0 0;
+            }
+            to {
+                background-position: 1000px 1000px;
+            }
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.4);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(74, 222, 128, 0.6);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(74, 222, 128, 0.8);
+        }
+        
+        .response-area {
+            transition: height 0.3s ease-out;
+        }
+        
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+    <div class="grid-bg"></div>
+    
+    <div class="container mx-auto px-4 py-10 max-w-6xl">
+        <!-- Header -->
+        <header class="flex items-center justify-between mb-10 fade-in">
+            <div>
+                <h1 class="text-4xl font-bold text-green-400 neon-glow tracking-tight">NEO API <span class="font-light">Tester</span></h1>
+                <p class="text-gray-400 mt-1">Test your APIs with futuristic precision</p>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="relative">
+                    <div class="absolute -inset-1 bg-green-400 rounded-lg blur opacity-20 animate-pulse"></div>
+                    <div class="relative px-4 py-2 bg-gray-900 rounded-lg border border-green-400/30">
+                        <span class="text-green-400 text-sm">STATUS: <span id="status-led" class="text-green-400">READY</span></span>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <!-- API Details Card -->
+            <div class="glass-card neon-border rounded-xl p-6 col-span-2 fade-in" style="animation-delay: 0.1s;">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-semibold text-green-400">API Request</h2>
+                    <div class="flex items-center space-x-2">
+                        <div class="h-3 w-3 bg-green-400 rounded-full animate-pulse"></div>
+                        <span class="text-xs text-gray-400">Live</span>
+                    </div>
+                </div>
+                
+                <div class="space-y-4">
+                    <!-- URL Input -->
+                    <div>
+                        <label for="api-url" class="block text-sm font-medium text-green-400 mb-1">API Endpoint</label>
+                        <div class="relative">
+                            <input type="text" id="api-url" placeholder="https://api.example.com/v1/resource" 
+                                   class="w-full bg-gray-900/70 border border-gray-700 rounded-lg px-4 py-2 text-gray-200 focus:outline-none focus:border-green-400 transition-all">
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Method Selector -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="http-method" class="block text-sm font-medium text-green-400 mb-1">HTTP Method</label>
+                            <select id="http-method" 
+                                    class="w-full bg-gray-900/70 border border-gray-700 rounded-lg px-4 py-2 text-gray-200 focus:outline-none focus:border-green-400 appearance-none">
+                                <option value="GET" class="bg-gray-800">GET</option>
+                                <option value="POST" class="bg-gray-800">POST</option>
+                                <option value="PUT" class="bg-gray-800">PUT</option>
+                                <option value="DELETE" class="bg-gray-800">DELETE</option>
+                                <option value="PATCH" class="bg-gray-800">PATCH</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="content-type" class="block text-sm font-medium text-green-400 mb-1">Content Type</label>
+                            <select id="content-type" 
+                                    class="w-full bg-gray-900/70 border border-gray-700 rounded-lg px-4 py-2 text-gray-200 focus:outline-none focus:border-green-400 appearance-none">
+                                <option value="application/json" class="bg-gray-800">application/json</option>
+                                <option value="application/xml" class="bg-gray-800">application/xml</option>
+                                <option value="text/plain" class="bg-gray-800">text/plain</option>
+                                <option value="application/x-www-form-urlencoded" class="bg-gray-800">form-urlencoded</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Headers -->
+                    <div>
+                        <label for="api-headers" class="block text-sm font-medium text-green-400 mb-1">
+                            <span>Headers</span>
+                            <span class="text-xs text-gray-400 ml-1">(JSON format)</span>
+                        </label>
+                        <textarea id="api-headers" rows="3" placeholder='{"Authorization": "Bearer token", "Content-Type": "application/json"}'
+                                  class="w-full bg-gray-900/70 border border-gray-700 rounded-lg px-4 py-2 text-gray-200 focus:outline-none focus:border-green-400 font-mono text-sm"></textarea>
+                    </div>
+                    
+                    <!-- Request Body -->
+                    <div>
+                        <label for="api-body" class="block text-sm font-medium text-green-400 mb-1">
+                            <span>Request Body</span>
+                            <span class="text-xs text-gray-400 ml-1">(Raw data)</span>
+                        </label>
+                        <textarea id="api-body" rows="5" placeholder='{"key": "value", "data": {...}}'
+                                  class="w-full bg-gray-900/70 border border-gray-700 rounded-lg px-4 py-2 text-gray-200 focus:outline-none focus:border-green-400 font-mono text-sm"></textarea>
+                    </div>
+                    
+                    <!-- Send Button -->
+                    <div class="pt-2">
+                        <button id="send-request" class="btn-primary w-full py-3 px-6 bg-green-500/10 border border-green-400/30 rounded-lg text-green-400 font-bold tracking-wider uppercase text-sm focus:outline-none flex items-center justify-center">
+                            <span id="send-text">Send Request</span>
+                            <span id="loading-spinner" class="hidden ml-2">
+                                <svg class="loading-spinner h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Examples/Info Card -->
+            <div class="glass-card neon-border rounded-xl p-6 fade-in" style="animation-delay: 0.2s;">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-semibold text-green-400">API Examples</h2>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
+                    </svg>
+                </div>
+                
+                <div class="space-y-4 text-gray-300 text-sm">
+                    <div>
+                        <h3 class="text-green-400 font-medium mb-1">Public APIs</h3>
+                        <ul class="space-y-2">
+                            <li class="flex items-start">
+                                <span class="text-green-400 mr-2">→</span>
+                                <button class="example-btn hover:text-green-400 transition-colors text-left" data-url="https://jsonplaceholder.typicode.com/posts" data-method="GET">JSONPlaceholder Posts</button>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-green-400 mr-2">→</span>
+                                <button class="example-btn hover:text-green-400 transition-colors text-left" data-url="https://api.coingecko.com/api/v3/ping" data-method="GET">CoinGecko Ping</button>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-green-400 mr-2">→</span>
+                                <button class="example-btn hover:text-green-400 transition-colors text-left" data-url="https://catfact.ninja/fact" data-method="GET">Random Cat Fact</button>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="pt-4 border-t border-gray-700/50">
+                        <h3 class="text-green-400 font-medium mb-1">POST Examples</h3>
+                        <ul class="space-y-2">
+                            <li class="flex items-start">
+                                <span class="text-green-400 mr-2">→</span>
+                                <button class="example-btn hover:text-green-400 transition-colors text-left" 
+                                        data-url="https://jsonplaceholder.typicode.com/posts" 
+                                        data-method="POST"
+                                        data-body='{"title": "foo", "body": "bar", "userId": 1}'>Create Post</button>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="pt-4 border-t border-gray-700/50">
+                        <h3 class="text-green-400 font-medium mb-1">Quick Tips</h3>
+                        <ul class="space-y-2">
+                            <li class="flex items-start">
+                                <span class="text-green-400 mr-2">•</span>
+                                <span>Use <code class="bg-gray-800 px-1 rounded">Ctrl+Enter</code> to send request</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-green-400 mr-2">•</span>
+                                <span>Click examples to auto-fill</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-green-400 mr-2">•</span>
+                                <span>JSON responses are auto-formatted</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Response Section -->
+        <div id="response-section" class="glass-card neon-border rounded-xl p-6 mb-10 fade-in hidden" style="animation-delay: 0.3s;">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-semibold text-green-400">API Response</h2>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center">
+                        <span class="text-xs text-gray-400 mr-2">Status:</span>
+                        <span id="response-status" class="px-2 py-1 rounded text-xs font-bold"></span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="text-xs text-gray-400 mr-2">Time:</span>
+                        <span id="response-time" class="text-green-400 text-xs font-mono"></span>
+                    </div>
+                    <button id="copy-response" class="text-gray-400 hover:text-green-400 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                            <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="bg-gray-900/50 border border-gray-700 rounded-lg overflow-hidden">
+                <pre id="response-content" class="p-4 text-gray-300 text-sm font-mono overflow-auto max-h-96"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Example buttons
+            const exampleBtns = document.querySelectorAll('.example-btn');
+            exampleBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const url = this.getAttribute('data-url');
+                    const method = this.getAttribute('data-method');
+                    const body = this.getAttribute('data-body') || '';
+                    
+                    document.getElementById('api-url').value = url;
+                    document.getElementById('http-method').value = method;
+                    document.getElementById('api-body').value = body;
+                    
+                    // Highlight the clicked example briefly
+                    this.classList.add('text-green-400');
+                    setTimeout(() => {
+                        this.classList.remove('text-green-400');
+                    }, 300);
+                });
+            });
+            
+            // Send request on Ctrl+Enter
+            document.addEventListener('keydown', function(e) {
+                if (e.ctrlKey && e.key === 'Enter') {
+                    sendRequest();
+                }
+            });
+            
+            // Send request button
+            document.getElementById('send-request').addEventListener('click', sendRequest);
+            
+            // Copy response button
+            document.getElementById('copy-response').addEventListener('click', function() {
+                const response = document.getElementById('response-content').textContent;
+                navigator.clipboard.writeText(response).then(() => {
+                    this.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                        </svg>
+                    `;
+                    setTimeout(() => {
+                        this.innerHTML = `
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                                <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+                            </svg>
+                        `;
+                    }, 2000);
+                });
+            });
+            
+            function sendRequest() {
+                const url = document.getElementById('api-url').value.trim();
+                const method = document.getElementById('http-method').value;
+                const contentType = document.getElementById('content-type').value;
+                const headers = document.getElementById('api-headers').value.trim();
+                const body = document.getElementById('api-body').value.trim();
+                
+                if (!url) {
+                    alert('Please enter an API URL');
+                    return;
+                }
+                
+                // Show loading state
+                const sendBtn = document.getElementById('send-request');
+                const sendText = document.getElementById('send-text');
+                const loadingSpinner = document.getElementById('loading-spinner');
+                
+                sendText.textContent = 'Sending...';
+                loadingSpinner.classList.remove('hidden');
+                document.getElementById('status-led').textContent = 'PROCESSING';
+                
+                // Hide previous response
+                document.getElementById('response-section').classList.add('hidden');
+                
+                // Start timer
+                const startTime = performance.now();
+                
+                // Prepare headers
+                let requestHeaders = {
+                    'Content-Type': contentType
+                };
+                
+                try {
+                    if (headers) {
+                        const parsedHeaders = JSON.parse(headers);
+                        Object.assign(requestHeaders, parsedHeaders);
+                    }
+                } catch (e) {
+                    alert('Invalid headers format. Must be valid JSON.');
+                    resetButton();
+                    return;
+                }
+                
+                // Prepare body
+                let requestBody = null;
+                if (['POST', 'PUT', 'PATCH'].includes(method) && body) {
+                    if (contentType === 'application/json') {
+                        try {
+                            requestBody = JSON.parse(body);
+                        } catch (e) {
+                            alert('Invalid JSON body');
+                            resetButton();
+                            return;
+                        }
+                    } else {
+                        requestBody = body;
+                    }
+                }
+                
+                // Make the request
+                fetch(url, {
+                    method: method,
+                    headers: requestHeaders,
+                    body: method === 'GET' ? null : (contentType === 'application/json' ? JSON.stringify(requestBody) : body)
+                })
+                .then(async response => {
+                    const endTime = performance.now();
+                    const responseTime = (endTime - startTime).toFixed(2);
+                    
+                    // Format response
+                    let responseData;
+                    try {
+                        responseData = await response.json();
+                        responseData = JSON.stringify(responseData, null, 2);
+                    } catch (e) {
+                        responseData = await response.text();
+                    }
+                    
+                    // Update UI
+                    document.getElementById('response-status').textContent = response.status;
+                    document.getElementById('response-status').className = `px-2 py-1 rounded text-xs font-bold ${
+                        response.status >= 200 && response.status < 300 ? 'bg-green-900/50 text-green-400' :
+                        response.status >= 400 && response.status < 500 ? 'bg-yellow-900/50 text-yellow-400' :
+                        'bg-red-900/50 text-red-400'
+                    }`;
+                    
+                    document.getElementById('response-time').textContent = `${responseTime} ms`;
+                    document.getElementById('response-content').textContent = responseData;
+                    document.getElementById('response-section').classList.remove('hidden');
+                    document.getElementById('status-led').textContent = 'COMPLETE';
+                    
+                    // Update history
+                    addToHistory(url, method, response.status, responseTime);
+                    
+                    resetButton();
+                })
+                .catch(error => {
+                    const endTime = performance.now();
+                    const responseTime = (endTime - startTime).toFixed(2);
+                    
+                    document.getElementById('response-status').textContent = 'Error';
+                    document.getElementById('response-status').className = 'px-2 py-1 rounded text-xs font-bold bg-red-900/50 text-red-400';
+                    document.getElementById('response-time').textContent = `${responseTime} ms`;
+                    document.getElementById('response-content').textContent = error.message;
+                    document.getElementById('response-section').classList.remove('hidden');
+                    document.getElementById('status-led').textContent = 'ERROR';
+                    
+                    resetButton();
+                });
+                
+                function resetButton() {
+                    sendText.textContent = 'Send Request';
+                    loadingSpinner.classList.add('hidden');
+                    
+                    // Button pulse animation
+                    sendBtn.classList.add('pulse');
+                    setTimeout(() => {
+                        sendBtn.classList.remove('pulse');
+                    }, 3000);
+                }
+            }
+            
+            function addToHistory(url, method, status, time) {
+                // In a real app, you would save this to localStorage or a backend
+                console.log('Request saved to history:', { url, method, status, time });
+            }
+        });
+    </script>
+</body>
+</html>
